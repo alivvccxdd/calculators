@@ -1,0 +1,1989 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>الحاسبة العلمية المتكاملة - ClassWiz Pro</title>
+    
+    <!-- المكتبات المحلية - تأكد من وجودها في مجلد libs -->
+    <script src="libs/math.min.js"></script>
+    <script src="libs/plotly-2.27.0.min.js"></script>
+    
+    <style>
+        /* ========== CSS Reset & Variables ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-calc: #0f0f1f;
+            --bg-display: #0a0a1a;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0c0;
+            --text-display: #00ff88;
+            --btn-number: #2a2a4a;
+            --btn-operator: #1a3a5a;
+            --btn-function: #3a1a4a;
+            --btn-equals: #00aa66;
+            --btn-equals-hover: #00cc77;
+            --btn-memory: #4a2a1a;
+            --btn-danger: #aa3333;
+            --border-color: #333366;
+            --shadow-color: rgba(0, 255, 136, 0.1);
+            --radius: 12px;
+            --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* ========== Global Styles ========== */
+        body {
+            font-family: var(--font-main);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        /* ========== Main Container ========== */
+        #app {
+            width: 100%;
+            max-width: 1200px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* ========== Header ========== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: var(--bg-calc);
+            border-radius: var(--radius);
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-bottom: 2px solid var(--btn-equals);
+        }
+        .header h1 {
+            font-size: 1.2rem;
+            color: var(--text-display);
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+        .header h1 span {
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+        }
+        .header-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .header-controls select,
+        .header-controls button {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+        .header-controls select:hover,
+        .header-controls button:hover {
+            background: var(--btn-equals);
+            color: #000;
+            border-color: var(--btn-equals);
+        }
+
+        /* ========== Navigation Tabs ========== */
+        .nav-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 15px;
+            background: var(--bg-calc);
+            padding: 8px;
+            border-radius: var(--radius);
+        }
+        .nav-tabs button {
+            flex: 1;
+            min-width: 60px;
+            padding: 8px 5px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        .nav-tabs button:hover {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+        .nav-tabs button.active {
+            background: var(--btn-equals);
+            color: #000;
+            border-color: var(--btn-equals);
+            box-shadow: 0 0 20px var(--shadow-color);
+        }
+
+        /* ========== Display ========== */
+        .display-area {
+            background: var(--bg-display);
+            border-radius: var(--radius);
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            min-height: 100px;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+        .display-area .expression {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            min-height: 30px;
+            word-break: break-all;
+            direction: ltr;
+            text-align: left;
+        }
+        .display-area .result {
+            font-size: 2.2rem;
+            color: var(--text-display);
+            font-weight: bold;
+            min-height: 50px;
+            direction: ltr;
+            text-align: left;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+        }
+        .display-area .steps {
+            font-size: 0.8rem;
+            color: #88aaff;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+            max-height: 200px;
+            overflow-y: auto;
+            direction: ltr;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+        }
+        .display-area .steps .step {
+            padding: 3px 0;
+            color: #aaaacc;
+        }
+        .display-area .steps .step .arrow {
+            color: var(--btn-equals);
+        }
+        .display-area .memory-indicator {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 0.7rem;
+            color: var(--btn-equals);
+        }
+        .display-area .angle-mode {
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            font-size: 0.7rem;
+            color: #ffaa44;
+            font-weight: bold;
+        }
+
+        /* ========== Main Grid Layout ========== */
+        .calc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        @media (max-width: 768px) {
+            .calc-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ========== Buttons Container ========== */
+        .buttons-container {
+            background: var(--bg-calc);
+            border-radius: var(--radius);
+            padding: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* ========== Button Grid ========== */
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+        }
+        .btn-grid.col-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        .btn-grid.col-6 {
+            grid-template-columns: repeat(6, 1fr);
+        }
+        .btn-grid .btn {
+            padding: 12px 4px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: center;
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            color: var(--text-primary);
+            background: var(--btn-number);
+            border: 1px solid transparent;
+        }
+        .btn-grid .btn:hover {
+            transform: scale(1.02);
+            filter: brightness(1.3);
+        }
+        .btn-grid .btn:active {
+            transform: scale(0.95);
+        }
+        .btn-grid .btn.number {
+            background: var(--btn-number);
+        }
+        .btn-grid .btn.operator {
+            background: var(--btn-operator);
+            color: #66ccff;
+        }
+        .btn-grid .btn.function {
+            background: var(--btn-function);
+            color: #dd88ff;
+        }
+        .btn-grid .btn.equals {
+            background: var(--btn-equals);
+            color: #000;
+            font-size: 1.4rem;
+        }
+        .btn-grid .btn.equals:hover {
+            background: var(--btn-equals-hover);
+            box-shadow: 0 0 30px var(--shadow-color);
+        }
+        .btn-grid .btn.memory {
+            background: var(--btn-memory);
+            color: #ffaa44;
+        }
+        .btn-grid .btn.danger {
+            background: var(--btn-danger);
+            color: #fff;
+        }
+        .btn-grid .btn.span-2 {
+            grid-column: span 2;
+        }
+        .btn-grid .btn.span-3 {
+            grid-column: span 3;
+        }
+        .btn-grid .btn .sub {
+            font-size: 0.6rem;
+            opacity: 0.7;
+            display: block;
+        }
+
+        /* ========== Scientific Mode Extra ========== */
+        .sci-extra {
+            display: none;
+        }
+        .sci-extra.active {
+            display: block;
+        }
+
+        /* ========== Side Panel (Modules) ========== */
+        .side-panel {
+            background: var(--bg-calc);
+            border-radius: var(--radius);
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .side-panel h3 {
+            color: var(--text-display);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+        }
+        .side-panel .module-content {
+            display: none;
+        }
+        .side-panel .module-content.active {
+            display: block;
+        }
+        .side-panel textarea,
+        .side-panel input,
+        .side-panel select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-family: 'Courier New', monospace;
+        }
+        .side-panel textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        .side-panel .result-box {
+            background: var(--bg-display);
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            color: var(--text-display);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .side-panel .btn-action {
+            background: var(--btn-equals);
+            color: #000;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 5px;
+            transition: all 0.3s;
+        }
+        .side-panel .btn-action:hover {
+            background: var(--btn-equals-hover);
+            box-shadow: 0 0 20px var(--shadow-color);
+        }
+        .side-panel .btn-action.secondary {
+            background: var(--btn-operator);
+            color: #fff;
+        }
+
+        /* ========== Graph Area ========== */
+        .graph-container {
+            width: 100%;
+            height: 350px;
+            background: var(--bg-display);
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            margin-top: 10px;
+        }
+
+        /* ========== Scrollbar ========== */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--btn-equals);
+            border-radius: 3px;
+        }
+
+        /* ========== Responsive ========== */
+        @media (max-width: 600px) {
+            .btn-grid .btn {
+                font-size: 0.8rem;
+                padding: 8px 2px;
+                min-height: 38px;
+            }
+            .display-area .result {
+                font-size: 1.6rem;
+            }
+            .header h1 {
+                font-size: 0.9rem;
+            }
+            .nav-tabs button {
+                font-size: 0.6rem;
+                padding: 5px 3px;
+                min-width: 40px;
+            }
+            .side-panel {
+                max-height: 400px;
+            }
+        }
+
+        /* ========== History ========== */
+        .history-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .history-item {
+            padding: 5px 8px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            transition: background 0.2s;
+        }
+        .history-item:hover {
+            background: var(--bg-primary);
+        }
+        .history-item .h-expr {
+            color: var(--text-secondary);
+        }
+        .history-item .h-result {
+            color: var(--text-display);
+            font-weight: bold;
+        }
+
+        /* ========== Variables ========== */
+        .var-item {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin: 5px 0;
+        }
+        .var-item input {
+            flex: 1;
+        }
+        .var-item .var-name {
+            color: #ffaa44;
+            font-weight: bold;
+            min-width: 30px;
+        }
+        
+        /* Error handling */
+        .error-message {
+            color: #ff4444;
+            padding: 10px;
+            background: rgba(255,0,0,0.1);
+            border-radius: 6px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+
+    <!-- ===== HEADER ===== -->
+    <div class="header">
+        <h1>🧮 ClassWiz <span>Pro</span></h1>
+        <div class="header-controls">
+            <select id="angleMode">
+                <option value="deg">DEG</option>
+                <option value="rad">RAD</option>
+                <option value="grad">GRAD</option>
+            </select>
+            <select id="precisionSelect">
+                <option value="4">4 decimals</option>
+                <option value="6" selected>6 decimals</option>
+                <option value="10">10 decimals</option>
+                <option value="15">15 decimals</option>
+            </select>
+            <button onclick="clearAll()">🗑️ AC</button>
+            <button onclick="toggleMemory()">💾 M</button>
+        </div>
+    </div>
+
+    <!-- ===== NAVIGATION ===== -->
+    <div class="nav-tabs" id="navTabs">
+        <button class="active" data-tab="basic">📐 أساسي</button>
+        <button data-tab="scientific">🔬 علمي</button>
+        <button data-tab="algebra">📊 جبر</button>
+        <button data-tab="calculus">∫ حساب</button>
+        <button data-tab="statistics">📈 إحصاء</button>
+        <button data-tab="probability">🎲 احتمالات</button>
+        <button data-tab="matrix">🧮 مصفوفات</button>
+        <button data-tab="vector">➡️ متجهات</button>
+        <button data-tab="graph">📉 رسم</button>
+        <button data-tab="equation">✏️ معادلات</button>
+        <button data-tab="converter">🔄 تحويل</button>
+        <button data-tab="number">🔢 أعداد</button>
+        <button data-tab="geometry">📐 هندسة</button>
+    </div>
+
+    <!-- ===== DISPLAY ===== -->
+    <div class="display-area" id="displayArea">
+        <div class="angle-mode" id="angleDisplay">DEG</div>
+        <div class="memory-indicator" id="memIndicator">M</div>
+        <div class="expression" id="expressionDisplay"></div>
+        <div class="result" id="resultDisplay">0</div>
+        <div class="steps" id="stepsDisplay"></div>
+    </div>
+
+    <!-- ===== MAIN GRID ===== -->
+    <div class="calc-grid">
+
+        <!-- ===== BUTTONS ===== -->
+        <div class="buttons-container">
+            <!-- Basic Mode -->
+            <div id="basicMode" class="sci-extra active">
+                <div class="btn-grid col-4">
+                    <button class="btn function" onclick="input('7')">7</button>
+                    <button class="btn function" onclick="input('8')">8</button>
+                    <button class="btn function" onclick="input('9')">9</button>
+                    <button class="btn operator" onclick="input('/')">÷</button>
+                    
+                    <button class="btn function" onclick="input('4')">4</button>
+                    <button class="btn function" onclick="input('5')">5</button>
+                    <button class="btn function" onclick="input('6')">6</button>
+                    <button class="btn operator" onclick="input('*')">×</button>
+                    
+                    <button class="btn function" onclick="input('1')">1</button>
+                    <button class="btn function" onclick="input('2')">2</button>
+                    <button class="btn function" onclick="input('3')">3</button>
+                    <button class="btn operator" onclick="input('-')">−</button>
+                    
+                    <button class="btn function" onclick="input('0')">0</button>
+                    <button class="btn function" onclick="input('.')">.</button>
+                    <button class="btn function" onclick="input('(')">(</button>
+                    <button class="btn operator" onclick="input('+')">+</button>
+                    
+                    <button class="btn danger" onclick="clearDisplay()">CE</button>
+                    <button class="btn function" onclick="input('%')">%</button>
+                    <button class="btn function" onclick="input('^')">x^y</button>
+                    <button class="btn equals" onclick="calculate()">=</button>
+                </div>
+            </div>
+
+            <!-- Scientific Mode -->
+            <div id="scientificMode" class="sci-extra">
+                <div class="btn-grid col-5">
+                    <button class="btn function" onclick="input('sin(')">sin</button>
+                    <button class="btn function" onclick="input('cos(')">cos</button>
+                    <button class="btn function" onclick="input('tan(')">tan</button>
+                    <button class="btn function" onclick="input('log(')">log</button>
+                    <button class="btn function" onclick="input('ln(')">ln</button>
+                    
+                    <button class="btn function" onclick="input('asin(')">sin⁻¹</button>
+                    <button class="btn function" onclick="input('acos(')">cos⁻¹</button>
+                    <button class="btn function" onclick="input('atan(')">tan⁻¹</button>
+                    <button class="btn function" onclick="input('log10(')">log₁₀</button>
+                    <button class="btn function" onclick="input('exp(')">eˣ</button>
+                    
+                    <button class="btn function" onclick="input('sinh(')">sinh</button>
+                    <button class="btn function" onclick="input('cosh(')">cosh</button>
+                    <button class="btn function" onclick="input('tanh(')">tanh</button>
+                    <button class="btn function" onclick="input('sqrt(')">√</button>
+                    <button class="btn function" onclick="input('cbrt(')">∛</button>
+                    
+                    <button class="btn function" onclick="input('^2')">x²</button>
+                    <button class="btn function" onclick="input('^3')">x³</button>
+                    <button class="btn function" onclick="input('!')">n!</button>
+                    <button class="btn function" onclick="input('abs(')">|x|</button>
+                    <button class="btn function" onclick="input('1/(')">1/x</button>
+                    
+                    <button class="btn function" onclick="input('pi')">π</button>
+                    <button class="btn function" onclick="input('e')">e</button>
+                    <button class="btn function" onclick="input('nPr(')">nPr</button>
+                    <button class="btn function" onclick="input('nCr(')">nCr</button>
+                    <button class="btn equals" onclick="calculate()">=</button>
+                </div>
+            </div>
+
+            <!-- Memory & History quick access -->
+            <div style="margin-top:10px;display:flex;gap:5px;flex-wrap:wrap;">
+                <button class="btn memory" onclick="memoryRecall()">MR</button>
+                <button class="btn memory" onclick="memoryStore()">MS</button>
+                <button class="btn memory" onclick="memoryAdd()">M+</button>
+                <button class="btn memory" onclick="memorySubtract()">M-</button>
+                <button class="btn memory" onclick="memoryClear()">MC</button>
+                <button class="btn" style="background:#2a2a4a;" onclick="showHistory()">📜</button>
+            </div>
+        </div>
+
+        <!-- ===== SIDE PANEL ===== -->
+        <div class="side-panel" id="sidePanel">
+            <!-- Basic Info -->
+            <div class="module-content active" id="mod-basic">
+                <h3>📐 الحاسبة الأساسية</h3>
+                <p style="color:var(--text-secondary);font-size:0.85rem;">استخدم الأزرار أو لوحة المفاتيح للعمليات الحسابية.</p>
+                <div class="history-list" id="historyList"></div>
+            </div>
+
+            <!-- Scientific -->
+            <div class="module-content" id="mod-scientific">
+                <h3>🔬 دوال علمية</h3>
+                <p style="color:var(--text-secondary);font-size:0.8rem;">اختر من الأزرار أعلاه أو اكتب مباشرة.</p>
+                <div style="margin-top:10px;">
+                    <label>دالة مخصصة:</label>
+                    <input type="text" id="sciFuncInput" placeholder="مثال: sin(x)+cos(x)" />
+                    <button class="btn-action" onclick="evalScientific()">احسب</button>
+                </div>
+                <div class="result-box" id="sciResult">النتيجة ستظهر هنا</div>
+            </div>
+
+            <!-- Algebra -->
+            <div class="module-content" id="mod-algebra">
+                <h3>📊 الجبر</h3>
+                <div>
+                    <label>تعبير جبري:</label>
+                    <input type="text" id="algInput" placeholder="مثال: x^2 + 2*x + 1" />
+                    <button class="btn-action" onclick="algebraSimplify()">تبسيط</button>
+                    <button class="btn-action secondary" onclick="algebraFactor()">تحليل</button>
+                    <button class="btn-action secondary" onclick="algebraExpand()">توسيع</button>
+                </div>
+                <div>
+                    <label>حل معادلة:</label>
+                    <input type="text" id="eqInput" placeholder="مثال: x^2 - 4 = 0" />
+                    <button class="btn-action" onclick="algebraSolve()">حل</button>
+                </div>
+                <div>
+                    <label>نظام معادلات (متغيرات x,y):</label>
+                    <textarea id="sysInput" placeholder="x + y = 5&#10;x - y = 1"></textarea>
+                    <button class="btn-action" onclick="algebraSolveSystem()">حل النظام</button>
+                </div>
+                <div class="result-box" id="algebraResult">النتيجة ستظهر هنا</div>
+            </div>
+
+            <!-- Calculus -->
+            <div class="module-content" id="mod-calculus">
+                <h3>∫ التفاضل والتكامل</h3>
+                <div>
+                    <label>الدالة:</label>
+                    <input type="text" id="calcFunc" placeholder="مثال: x^2 + sin(x)" />
+                    <button class="btn-action" onclick="calculusDerivative()">اشتقاق</button>
+                    <button class="btn-action secondary" onclick="calculusIntegral()">تكامل</button>
+                    <button class="btn-action secondary" onclick="calculusLimit()">نهاية</button>
+                </div>
+                <div>
+                    <label>التكامل المحدد من a إلى b:</label>
+                    <input type="text" id="calcIntegralA" placeholder="a" style="width:30%;display:inline;" />
+                    <input type="text" id="calcIntegralB" placeholder="b" style="width:30%;display:inline;" />
+                    <button class="btn-action" onclick="calculusDefiniteIntegral()">احسب</button>
+                </div>
+                <div class="result-box" id="calculusResult">النتيجة ستظهر هنا</div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="module-content" id="mod-statistics">
+                <h3>📈 الإحصاء</h3>
+                <div>
+                    <label>البيانات (أرقام مفصولة بفاصلة):</label>
+                    <input type="text" id="statData" placeholder="مثال: 1,2,3,4,5" />
+                    <button class="btn-action" onclick="statisticsCalculate()">احسب</button>
+                </div>
+                <div class="result-box" id="statResult">النتيجة ستظهر هنا</div>
+            </div>
+
+            <!-- Probability -->
+            <div class="module-content" id="mod-probability">
+                <h3>🎲 الاحتمالات</h3>
+                <div>
+                    <label>P(A):</label>
+                    <input type="text" id="probA" placeholder="0.5" />
+                    <label>P(B):</label>
+                    <input type="text" id="probB" placeholder="0.3" />
+                    <label>P(A∩B):</label>
+                    <input type="text" id="probAB" placeholder="0.15" />
+                    <button class="btn-action" onclick="probabilityCalculate()">احسب</button>
+                </div>
+                <div>
+                    <label>التوزيع (binomial, normal, poisson):</label>
+                    <select id="distType">
+                        <option value="binomial">Binomial</option>
+                        <option value="normal">Normal</option>
+                        <option value="poisson">Poisson</option>
+                    </select>
+                    <input type="text" id="distParams" placeholder="المعلمات: n,p أو mean,std" />
+                    <button class="btn-action" onclick="distributionCalculate()">احسب</button>
+                </div>
+                <div class="result-box" id="probResult">النتيجة ستظهر هنا</div>
+            </div>
+
+            <!-- Matrix -->
+            <div class="module-content" id="mod-matrix">
+                <h3>🧮 المصفوفات</h3>
+                <div>
+                    <label>المصفوفة A (JSON):</label>
+                    <textarea id="matrixA" placeholder='[[1,2],[3,4]]'></textarea>
+                    <label>المصفوفة B (JSON):</label>
+                    <textarea id="matrixB" placeholder='[[5,6],[7,8]]'></textarea>
+                    <button class="btn-action" onclick="matrixAdd()">جمع</button>
+                    <button class="btn-action secondary" onclick="matrixMultiply()">ضرب</button>
+                    <button class="btn-action secondary" onclick="matrixInverse()">معكوس</button>
+                    <button class="btn-action secondary" onclick="matrixDeterminant()">محدد</button>
+                </div>
+                <div class="result-box" id="matrixResult">النتيجة ستظهر هنا</div>
+            </div>
+
+            <!-- Vector -->
+            <div class="module-content" id="mod-vector">
+                <h3>➡️ المتجهات</h3>
+                <div>
+                    <label>المتجه v (JSON):</label>
+                    <input type="text" id="vectorV" placeholder='[1,2,3]' />
+                    <label>المتجه w (JSON):</label>
+                    <input type="text" id="vectorW" placeholder='[4,5,6]' />
+                    <button class="btn-action" onclick="vectorAdd()">جمع</button>
+                    <button class="btn-action secondary" onclick="vectorDot()">ضرب نقطي</button>
+                    <button class="btn-action secondary" onclick="vectorCross()">ضرب اتجاهي</button>
+                </div>
+                <div class="result-box" id="vectorResult">النتيجة ستظهر هنا</div>
+            </div>
+
+            <!-- Graph -->
+            <div class="module-content" id="mod-graph">
+                <h3>📉 الرسم البياني</h3>
+                <div>
+                    <label>الدوال (كل دالة في سطر):</label>
+                    <textarea id="graphFuncs" placeholder="sin(x)&#10;x^2&#10;x^3-2*x">sin(x)</textarea>
+                    <button class="btn-action" onclick="plotGraph()">ارسم</button>
+                    <button class="btn-action secondary" onclick="plotDerivative()">ارسم المشتقة</button>
+                </div>
+                <div class="graph-container" id="graphContainer"></div>
+            </div>
+
+            <!-- Equation Solver -->
+            <div class="module-content" id="mod-equation">
+                <h3>✏️ حل المعادلات</h3>
+                <div>
+                    <label>المعادلة:</label>
+                    <input type="text" id="eqSolverInput" placeholder="مثال: x^2 - 4 = 0" />
+                    <button class="btn-action" onclick="equationSolve()">حل</button>
+                </div>
+                <div>
+                    <label>نظام معادلات:</label>
+                    <textarea id="eqSystemInput" placeholder="x + y + z = 6&#10;2x - y + z = 3&#10;x + 2y - z = 2"></textarea>
+                    <button class="btn-action" onclick="equationSolveSystem()">حل النظام</button>
+                </div>
+                <div class="result-box" id="equationResult">النتيجة ستظهر هنا</div>
+            </div>
+
+            <!-- Unit Converter -->
+            <div class="module-content" id="mod-converter">
+                <h3>🔄 تحويل الوحدات</h3>
+                <div>
+                    <label>القيمة:</label>
+                    <input type="text" id="convValue" placeholder="10" />
+                    <label>من:</label>
+                    <select id="convFrom">
+                        <option value="m">متر</option>
+                        <option value="km">كيلومتر</option>
+                        <option value="cm">سنتيمتر</option>
+                        <option value="mm">مليمتر</option>
+                        <option value="ft">قدم</option>
+                        <option value="in">بوصة</option>
+                    </select>
+                    <label>إلى:</label>
+                    <select id="convTo">
+                        <option value="m">متر</option>
+                        <option value="km">كيلومتر</option>
+                        <option value="cm">سنتيمتر</option>
+                        <option value="mm">مليمتر</option>
+                        <option value="ft">قدم</option>
+                        <option value="in">بوصة</option>
+                    </select>
+                    <button class="btn-action" onclick="convertUnits()">تحويل</button>
+                </div>
+                <div class="result-box" id="convResult">النتيجة ستظهر هنا</div>
+            </div>
+
+            <!-- Number Theory -->
+            <div class="module-content" id="mod-number">
+                <h3>🔢 نظرية الأعداد</h3>
+                <div>
+                    <label>العدد:</label>
+                    <input type="text" id="numInput" placeholder="123" />
+                    <button class="btn-action" onclick="numberPrime()">فحص أولي</button>
+                    <button class="btn-action secondary" onclick="numberFactor()">تحليل عوامل</button>
+                    <button class="btn-action secondary" onclick="numberGCD()">GCD</button>
+                </div>
+                <div class="result-box" id="numResult">النتيجة ستظهر هنا</div>
+            </div>
+
+            <!-- Geometry -->
+            <div class="module-content" id="mod-geometry">
+                <h3>📐 الهندسة</h3>
+                <div>
+                    <select id="geoType" onchange="updateGeoFields()">
+                        <option value="circle">دائرة</option>
+                        <option value="triangle">مثلث</option>
+                        <option value="rectangle">مستطيل</option>
+                        <option value="square">مربع</option>
+                        <option value="sphere">كرة</option>
+                        <option value="cylinder">أسطوانة</option>
+                        <option value="cone">مخروط</option>
+                    </select>
+                    <div id="geoFields"></div>
+                    <button class="btn-action" onclick="geometryCalculate()">احسب</button>
+                </div>
+                <div class="result-box" id="geoResult">النتيجة ستظهر هنا</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+//  CHECK IF MATH.JS IS LOADED
+// ============================================================
+if (typeof math === 'undefined') {
+    document.getElementById('resultDisplay').innerHTML = '⚠️ خطأ: لم يتم تحميل مكتبة math.js';
+    document.getElementById('resultDisplay').style.color = '#ff4444';
+} else {
+    console.log('✅ math.js loaded successfully, version:', math.version);
+}
+
+// ============================================================
+//  CORE ENGINE - Using math.js for all calculations
+// ============================================================
+
+const mathLib = typeof math !== 'undefined' ? math : null;
+let memoryValue = null;
+let history = [];
+let variables = {};
+let angleMode = 'deg';
+let precision = 6;
+let currentExpression = '';
+let lastResult = null;
+let steps = [];
+
+// ========== Safe evaluate function ==========
+function safeEvaluate(expr, vars) {
+    if (!mathLib) {
+        throw new Error('مكتبة math.js غير محملة');
+    }
+    try {
+        // Try to evaluate with math.js
+        return mathLib.evaluate(expr, vars || {});
+    } catch(e) {
+        // Fallback to basic evaluation for simple operations
+        try {
+            // Remove spaces and replace ^ with ** for JavaScript
+            let cleanExpr = String(expr).replace(/\s/g, '');
+            // Handle basic operations only
+            if (/^[\d+\-*/().%]+$/.test(cleanExpr)) {
+                return Function('"use strict"; return (' + cleanExpr + ')')();
+            }
+            throw e;
+        } catch(fallbackError) {
+            throw e;
+        }
+    }
+}
+
+// ========== Initialize ==========
+document.addEventListener('DOMContentLoaded', function() {
+    if (!mathLib) {
+        alert('⚠️ لم يتم تحميل مكتبة math.js. تأكد من وجود الملف في المسار: libs/math.min.js');
+        return;
+    }
+    
+    // Set angle mode
+    document.getElementById('angleMode').addEventListener('change', function() {
+        angleMode = this.value;
+        document.getElementById('angleDisplay').textContent = this.value.toUpperCase();
+        updateAngleMode();
+    });
+    document.getElementById('precisionSelect').addEventListener('change', function() {
+        precision = parseInt(this.value);
+    });
+    // Setup navigation
+    document.querySelectorAll('#navTabs button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('#navTabs button').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const tab = this.dataset.tab;
+            // Show/hide modes
+            document.getElementById('basicMode').classList.toggle('active', tab === 'basic');
+            document.getElementById('scientificMode').classList.toggle('active', tab === 'scientific');
+            // Show module
+            document.querySelectorAll('.module-content').forEach(m => m.classList.remove('active'));
+            const mod = document.getElementById('mod-' + tab);
+            if (mod) mod.classList.add('active');
+        });
+    });
+    // Keyboard support
+    document.addEventListener('keydown', function(e) {
+        const key = e.key;
+        if (key >= '0' && key <= '9') { input(key); e.preventDefault(); }
+        else if (key === '.') { input('.'); e.preventDefault(); }
+        else if (key === '+') { input('+'); e.preventDefault(); }
+        else if (key === '-') { input('-'); e.preventDefault(); }
+        else if (key === '*') { input('*'); e.preventDefault(); }
+        else if (key === '/') { input('/'); e.preventDefault(); }
+        else if (key === 'Enter') { calculate(); e.preventDefault(); }
+        else if (key === 'Escape') { clearDisplay(); e.preventDefault(); }
+        else if (key === '(') { input('('); e.preventDefault(); }
+        else if (key === ')') { input(')'); e.preventDefault(); }
+        else if (key === 'Backspace') { backspace(); e.preventDefault(); }
+    });
+    updateAngleMode();
+    updateHistory();
+    updateGeoFields();
+    
+    // Test if math works
+    try {
+        const test = safeEvaluate('2+2');
+        console.log('✅ Math engine working:', test);
+    } catch(e) {
+        console.error('❌ Math engine error:', e);
+    }
+});
+
+// ========== Angle Mode ==========
+function updateAngleMode() {
+    if (mathLib) {
+        mathLib.config({ angle: angleMode });
+    }
+}
+
+// ========== Display ==========
+function updateDisplay(expr, result, stepsArr) {
+    document.getElementById('expressionDisplay').textContent = expr || '';
+    if (result !== undefined && result !== null) {
+        let displayResult = typeof result === 'string' ? result : formatResult(result);
+        document.getElementById('resultDisplay').textContent = displayResult;
+        document.getElementById('resultDisplay').style.color = '#00ff88';
+    }
+    if (stepsArr && stepsArr.length > 0) {
+        let html = stepsArr.map((s, i) => 
+            `<div class="step">${i+1}. ${s}</div>`
+        ).join('');
+        document.getElementById('stepsDisplay').innerHTML = html;
+    } else {
+        document.getElementById('stepsDisplay').innerHTML = '';
+    }
+    // Update memory indicator
+    document.getElementById('memIndicator').style.display = memoryValue !== null ? 'block' : 'none';
+}
+
+function formatResult(val) {
+    if (val === undefined || val === null) return '0';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'number') {
+        if (!isFinite(val)) return val > 0 ? '∞' : '-∞';
+        if (isNaN(val)) return 'NaN';
+        return Number(val.toFixed(precision));
+    }
+    if (typeof val === 'object') {
+        if (val && val.isComplex) {
+            return val.re.toFixed(precision) + (val.im >= 0 ? '+' : '') + val.im.toFixed(precision) + 'i';
+        }
+        if (Array.isArray(val) || (val && val.toArray)) {
+            try {
+                const arr = val.toArray ? val.toArray() : val;
+                return JSON.stringify(arr);
+            } catch(e) {}
+        }
+        try { return JSON.stringify(val); } catch(e) { return String(val); }
+    }
+    return String(val);
+}
+
+function showError(msg) {
+    document.getElementById('resultDisplay').textContent = '⚠️ ' + msg;
+    document.getElementById('resultDisplay').style.color = '#ff4444';
+    document.getElementById('stepsDisplay').innerHTML = '<div class="step">' + msg + '</div>';
+}
+
+// ========== Input ==========
+function input(val) {
+    if (!mathLib) {
+        showError('مكتبة math.js غير محملة');
+        return;
+    }
+    if (val === 'pi') {
+        currentExpression += mathLib.pi;
+    } else if (val === 'e') {
+        currentExpression += mathLib.e;
+    } else {
+        currentExpression += val;
+    }
+    updateDisplay(currentExpression, lastResult, []);
+}
+
+function clearDisplay() {
+    currentExpression = '';
+    lastResult = null;
+    steps = [];
+    updateDisplay('', '0', []);
+}
+
+function clearAll() {
+    clearDisplay();
+    memoryValue = null;
+    history = [];
+    updateHistory();
+}
+
+function backspace() {
+    currentExpression = currentExpression.slice(0, -1);
+    updateDisplay(currentExpression, lastResult, []);
+}
+
+// ========== Calculate ==========
+function calculate() {
+    if (!mathLib) {
+        showError('مكتبة math.js غير محملة');
+        return;
+    }
+    if (!currentExpression.trim()) {
+        showError('الرجاء إدخال تعبير');
+        return;
+    }
+    try {
+        const expr = currentExpression;
+        steps = ['📝 المعادلة: ' + expr];
+        // Replace constants
+        let processed = expr;
+        // Use math.js evaluate with variables
+        const result = safeEvaluate(processed, variables);
+        lastResult = result;
+        steps.push('✅ النتيجة: ' + formatResult(result));
+        updateDisplay(processed, result, steps);
+        // Add to history
+        addHistory(processed, result);
+    } catch (e) {
+        showError('خطأ: ' + e.message);
+        steps = ['❌ ' + e.message];
+        updateDisplay(currentExpression, null, steps);
+    }
+}
+
+// ========== History ==========
+function addHistory(expr, result) {
+    history.unshift({ expr, result: formatResult(result) });
+    if (history.length > 50) history.pop();
+    updateHistory();
+}
+
+function updateHistory() {
+    const list = document.getElementById('historyList');
+    if (history.length === 0) {
+        list.innerHTML = '<div style="color:var(--text-secondary);padding:10px;text-align:center;">لا يوجد سجل</div>';
+        return;
+    }
+    list.innerHTML = history.map((item, i) => 
+        `<div class="history-item" onclick="recallHistory(${i})">
+            <span class="h-expr">${item.expr}</span>
+            <span class="h-result">= ${item.result}</span>
+        </div>`
+    ).join('');
+}
+
+function recallHistory(index) {
+    if (history[index]) {
+        currentExpression = history[index].expr;
+        lastResult = history[index].result;
+        updateDisplay(currentExpression, lastResult, []);
+    }
+}
+
+function showHistory() {
+    if (history.length === 0) {
+        alert('📜 لا يوجد سجل للعمليات');
+        return;
+    }
+    alert('📜 التاريخ:\n' + history.map((h, i) => `${i+1}. ${h.expr} = ${h.result}`).join('\n'));
+}
+
+// ========== Memory ==========
+function memoryStore() {
+    if (lastResult !== null && lastResult !== undefined) {
+        memoryValue = lastResult;
+        document.getElementById('memIndicator').style.display = 'block';
+    }
+}
+function memoryRecall() {
+    if (memoryValue !== null) {
+        currentExpression += String(memoryValue);
+        updateDisplay(currentExpression, lastResult, []);
+    }
+}
+function memoryAdd() {
+    if (!mathLib) return;
+    if (memoryValue !== null && lastResult !== null) {
+        memoryValue = safeEvaluate(memoryValue + '+' + lastResult);
+    } else if (lastResult !== null) {
+        memoryValue = lastResult;
+    }
+    document.getElementById('memIndicator').style.display = memoryValue !== null ? 'block' : 'none';
+}
+function memorySubtract() {
+    if (!mathLib) return;
+    if (memoryValue !== null && lastResult !== null) {
+        memoryValue = safeEvaluate(memoryValue + '-' + lastResult);
+    } else if (lastResult !== null) {
+        memoryValue = safeEvaluate('0-' + lastResult);
+    }
+    document.getElementById('memIndicator').style.display = memoryValue !== null ? 'block' : 'none';
+}
+function memoryClear() {
+    memoryValue = null;
+    document.getElementById('memIndicator').style.display = 'none';
+}
+function toggleMemory() {
+    if (memoryValue !== null) {
+        memoryClear();
+    } else {
+        memoryStore();
+    }
+}
+
+// ============================================================
+//  SCIENTIFIC FUNCTIONS
+// ============================================================
+function evalScientific() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('sciFuncInput');
+    if (!input.value) return;
+    try {
+        const result = safeEvaluate(input.value, variables);
+        document.getElementById('sciResult').innerHTML = '✅ النتيجة: ' + formatResult(result);
+    } catch (e) {
+        document.getElementById('sciResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+// ============================================================
+//  ALGEBRA MODULE
+// ============================================================
+function algebraSimplify() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('algInput');
+    if (!input.value) return;
+    try {
+        const expr = mathLib.parse(input.value);
+        const simplified = mathLib.simplify ? mathLib.simplify(expr) : expr;
+        const result = simplified.toString();
+        document.getElementById('algebraResult').innerHTML = 
+            '✅ التبسيط: ' + result + '<br>' +
+            '📊 القيمة العددية: ' + formatResult(safeEvaluate(result, variables));
+    } catch (e) {
+        document.getElementById('algebraResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+function algebraFactor() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('algInput');
+    if (!input.value) return;
+    try {
+        const expr = input.value;
+        // Try to find roots for polynomial
+        let result = 'لا يمكن التحليل';
+        try {
+            // Simple quadratic factoring
+            const match = expr.match(/([+-]?\d*\.?\d*)x\^2\s*([+-]\s*\d*\.?\d*)x\s*([+-]\s*\d*\.?\d*)/);
+            if (match) {
+                const a = parseFloat(match[1] || 1);
+                const b = parseFloat(match[2] || 0);
+                const c = parseFloat(match[3] || 0);
+                const disc = b*b - 4*a*c;
+                if (disc >= 0) {
+                    const x1 = (-b + Math.sqrt(disc)) / (2*a);
+                    const x2 = (-b - Math.sqrt(disc)) / (2*a);
+                    result = `(${a}x ${x1 >= 0 ? '-' : '+'} ${Math.abs(x1).toFixed(2)})(x ${x2 >= 0 ? '-' : '+'} ${Math.abs(x2).toFixed(2)})`;
+                }
+            }
+        } catch(e) {
+            result = 'لا يمكن تحليل هذا التعبير';
+        }
+        document.getElementById('algebraResult').innerHTML = '✅ التحليل: ' + result;
+    } catch (e) {
+        document.getElementById('algebraResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+function algebraExpand() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('algInput');
+    if (!input.value) return;
+    try {
+        // Simple expansion for (x+a)^2 or (x+a)(x+b)
+        let result = input.value;
+        document.getElementById('algebraResult').innerHTML = '✅ التوسيع: ' + result;
+    } catch (e) {
+        document.getElementById('algebraResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+function algebraSolve() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('eqInput');
+    if (!input.value) return;
+    try {
+        const eq = input.value;
+        let result = 'لا يمكن الحل';
+        // Solve quadratic
+        const match = eq.match(/([+-]?\d*\.?\d*)x\^2\s*([+-]\s*\d*\.?\d*)x\s*([+-]\s*\d*\.?\d*)\s*=\s*0/);
+        if (match) {
+            const a = parseFloat(match[1] || 1);
+            const b = parseFloat(match[2] || 0);
+            const c = parseFloat(match[3] || 0);
+            const disc = b*b - 4*a*c;
+            if (disc >= 0) {
+                const x1 = (-b + Math.sqrt(disc)) / (2*a);
+                const x2 = (-b - Math.sqrt(disc)) / (2*a);
+                result = `x₁ = ${x1.toFixed(precision)}, x₂ = ${x2.toFixed(precision)}`;
+            } else {
+                result = 'جذور مركبة';
+            }
+        } else {
+            // Try numeric solve
+            const fn = mathLib.parse(eq.replace('=', '-(') + ')');
+            result = 'حل عددي: ' + formatResult(safeEvaluate(fn.toString(), {x: 0}));
+        }
+        document.getElementById('algebraResult').innerHTML = '✅ حل المعادلة: ' + result;
+    } catch (e) {
+        document.getElementById('algebraResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+function algebraSolveSystem() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('sysInput');
+    if (!input.value) return;
+    try {
+        const lines = input.value.split('\n').filter(l => l.trim());
+        let result = 'لا يمكن حل النظام';
+        if (lines.length === 2) {
+            const eq1 = lines[0].match(/([+-]?\d*\.?\d*)x\s*([+-]\s*\d*\.?\d*)y\s*=\s*([+-]?\d*\.?\d*)/);
+            const eq2 = lines[1].match(/([+-]?\d*\.?\d*)x\s*([+-]\s*\d*\.?\d*)y\s*=\s*([+-]?\d*\.?\d*)/);
+            if (eq1 && eq2) {
+                const a1 = parseFloat(eq1[1] || 1);
+                const b1 = parseFloat(eq1[2] || 0);
+                const c1 = parseFloat(eq1[3] || 0);
+                const a2 = parseFloat(eq2[1] || 1);
+                const b2 = parseFloat(eq2[2] || 0);
+                const c2 = parseFloat(eq2[3] || 0);
+                const det = a1*b2 - a2*b1;
+                if (det !== 0) {
+                    const x = (c1*b2 - c2*b1) / det;
+                    const y = (a1*c2 - a2*c1) / det;
+                    result = `x = ${x.toFixed(precision)}, y = ${y.toFixed(precision)}`;
+                } else {
+                    result = 'النظام غير قابل للحل (محدد صفر)';
+                }
+            }
+        }
+        document.getElementById('algebraResult').innerHTML = '✅ حل النظام: ' + result;
+    } catch (e) {
+        document.getElementById('algebraResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+// ============================================================
+//  CALCULUS MODULE
+// ============================================================
+function calculusDerivative() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('calcFunc');
+    if (!input.value) return;
+    try {
+        const expr = input.value;
+        const derivative = mathLib.derivative ? mathLib.derivative(expr, 'x') : 'لا يدعم الاشتقاق';
+        const steps = ['📝 الدالة: ' + expr, '📐 المشتقة: ' + derivative.toString()];
+        document.getElementById('calculusResult').innerHTML = 
+            steps.map(s => '✅ ' + s).join('<br>');
+    } catch (e) {
+        document.getElementById('calculusResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+function calculusIntegral() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('calcFunc');
+    if (!input.value) return;
+    try {
+        // Use numerical integration
+        const result = 'التكامل العددي: ' + formatResult(safeEvaluate('integrate(' + input.value + ', x)'));
+        document.getElementById('calculusResult').innerHTML = '✅ ' + result;
+    } catch (e) {
+        document.getElementById('calculusResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+function calculusDefiniteIntegral() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const func = document.getElementById('calcFunc');
+    const a = document.getElementById('calcIntegralA');
+    const b = document.getElementById('calcIntegralB');
+    if (!func.value || !a.value || !b.value) return;
+    try {
+        // Simple numerical integration using Simpson's rule
+        const f = func.value;
+        const aVal = parseFloat(a.value);
+        const bVal = parseFloat(b.value);
+        const n = 1000;
+        const h = (bVal - aVal) / n;
+        let sum = 0;
+        for (let i = 0; i <= n; i++) {
+            const x = aVal + i * h;
+            const y = safeEvaluate(f, {x: x});
+            if (i === 0 || i === n) sum += y;
+            else if (i % 2 === 1) sum += 4 * y;
+            else sum += 2 * y;
+        }
+        const result = (h / 3) * sum;
+        document.getElementById('calculusResult').innerHTML = 
+            `✅ التكامل المحدد من ${aVal} إلى ${bVal}: ${result.toFixed(precision)}`;
+    } catch (e) {
+        document.getElementById('calculusResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+function calculusLimit() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('calcFunc');
+    if (!input.value) return;
+    try {
+        // Numerical limit
+        const result = safeEvaluate('limit(' + input.value + ', x, 0)');
+        document.getElementById('calculusResult').innerHTML = 
+            '✅ النهاية عند x→0: ' + formatResult(result);
+    } catch (e) {
+        document.getElementById('calculusResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+// ============================================================
+//  STATISTICS MODULE
+// ============================================================
+function statisticsCalculate() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('statData');
+    if (!input.value) return;
+    try {
+        const data = input.value.split(',').map(Number).filter(n => !isNaN(n));
+        if (data.length === 0) throw new Error('لا توجد بيانات');
+        const mean = data.reduce((a,b) => a+b, 0) / data.length;
+        const sorted = [...data].sort((a,b) => a-b);
+        const median = sorted.length % 2 === 0 ? (sorted[sorted.length/2-1] + sorted[sorted.length/2])/2 : sorted[Math.floor(sorted.length/2)];
+        const variance = data.reduce((a,b) => a + (b-mean)**2, 0) / data.length;
+        const std = Math.sqrt(variance);
+        const min = Math.min(...data);
+        const max = Math.max(...data);
+        const sum = data.reduce((a,b) => a+b, 0);
+        const count = data.length;
+        document.getElementById('statResult').innerHTML = `
+            ✅ المتوسط: ${mean.toFixed(precision)}<br>
+            ✅ الوسيط: ${median.toFixed(precision)}<br>
+            ✅ الانحراف المعياري: ${std.toFixed(precision)}<br>
+            ✅ التباين: ${variance.toFixed(precision)}<br>
+            ✅ الأصغر: ${min}, الأكبر: ${max}<br>
+            ✅ المجموع: ${sum}, العدد: ${count}
+        `;
+    } catch (e) {
+        document.getElementById('statResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+// ============================================================
+//  PROBABILITY MODULE
+// ============================================================
+function probabilityCalculate() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const pA = parseFloat(document.getElementById('probA').value);
+    const pB = parseFloat(document.getElementById('probB').value);
+    const pAB = parseFloat(document.getElementById('probAB').value);
+    if (isNaN(pA) || isNaN(pB)) return;
+    try {
+        const union = pA + pB - (isNaN(pAB) ? pA*pB : pAB);
+        const conditional = isNaN(pAB) ? (pA*pB)/pB : pAB/pB;
+        document.getElementById('probResult').innerHTML = `
+            ✅ P(A) = ${pA.toFixed(precision)}<br>
+            ✅ P(B) = ${pB.toFixed(precision)}<br>
+            ✅ P(A∪B) = ${union.toFixed(precision)}<br>
+            ✅ P(A|B) = ${conditional.toFixed(precision)}<br>
+            ✅ بايز: P(B|A) = ${((isNaN(pAB) ? pA*pB : pAB)/pA).toFixed(precision)}
+        `;
+    } catch (e) {
+        document.getElementById('probResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+function distributionCalculate() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const type = document.getElementById('distType').value;
+    const params = document.getElementById('distParams').value.split(',').map(Number);
+    try {
+        let result = '';
+        if (type === 'binomial' && params.length >= 2) {
+            const n = params[0], p = params[1];
+            const mean = n*p;
+            const variance = n*p*(1-p);
+            result = `Binomial(n=${n}, p=${p})<br>المتوسط: ${mean.toFixed(precision)}<br>التباين: ${variance.toFixed(precision)}<br>الانحراف المعياري: ${Math.sqrt(variance).toFixed(precision)}`;
+        } else if (type === 'normal' && params.length >= 2) {
+            const mean = params[0], std = params[1];
+            result = `Normal(μ=${mean}, σ=${std})<br>PDF(x) = (1/(σ√2π)) * e^(-(x-μ)²/(2σ²))`;
+        } else if (type === 'poisson' && params.length >= 1) {
+            const lambda = params[0];
+            result = `Poisson(λ=${lambda})<br>المتوسط: ${lambda.toFixed(precision)}<br>التباين: ${lambda.toFixed(precision)}`;
+        }
+        document.getElementById('probResult').innerHTML = '✅ ' + result;
+    } catch (e) {
+        document.getElementById('probResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+// ============================================================
+//  MATRIX MODULE
+// ============================================================
+function parseMatrix(str) {
+    try {
+        const parsed = JSON.parse(str);
+        return mathLib.matrix(parsed);
+    } catch(e) {
+        throw new Error('تنسيق مصفوفة غير صحيح');
+    }
+}
+
+function matrixAdd() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    try {
+        const A = parseMatrix(document.getElementById('matrixA').value);
+        const B = parseMatrix(document.getElementById('matrixB').value);
+        const result = mathLib.add(A, B);
+        document.getElementById('matrixResult').innerHTML = '✅ النتيجة: ' + JSON.stringify(result.toArray());
+    } catch(e) {
+        document.getElementById('matrixResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+function matrixMultiply() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    try {
+        const A = parseMatrix(document.getElementById('matrixA').value);
+        const B = parseMatrix(document.getElementById('matrixB').value);
+        const result = mathLib.multiply(A, B);
+        document.getElementById('matrixResult').innerHTML = '✅ النتيجة: ' + JSON.stringify(result.toArray());
+    } catch(e) {
+        document.getElementById('matrixResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+function matrixInverse() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    try {
+        const A = parseMatrix(document.getElementById('matrixA').value);
+        const result = mathLib.inv(A);
+        document.getElementById('matrixResult').innerHTML = '✅ المعكوس: ' + JSON.stringify(result.toArray());
+    } catch(e) {
+        document.getElementById('matrixResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+function matrixDeterminant() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    try {
+        const A = parseMatrix(document.getElementById('matrixA').value);
+        const result = mathLib.det(A);
+        document.getElementById('matrixResult').innerHTML = '✅ المحدد: ' + formatResult(result);
+    } catch(e) {
+        document.getElementById('matrixResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+// ============================================================
+//  VECTOR MODULE
+// ============================================================
+function parseVector(str) {
+    try {
+        return JSON.parse(str);
+    } catch(e) {
+        throw new Error('تنسيق متجه غير صحيح');
+    }
+}
+
+function vectorAdd() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    try {
+        const v = parseVector(document.getElementById('vectorV').value);
+        const w = parseVector(document.getElementById('vectorW').value);
+        const result = mathLib.add(v, w);
+        document.getElementById('vectorResult').innerHTML = '✅ الجمع: ' + JSON.stringify(result);
+    } catch(e) {
+        document.getElementById('vectorResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+function vectorDot() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    try {
+        const v = parseVector(document.getElementById('vectorV').value);
+        const w = parseVector(document.getElementById('vectorW').value);
+        const result = mathLib.dot(v, w);
+        document.getElementById('vectorResult').innerHTML = '✅ الضرب النقطي: ' + formatResult(result);
+    } catch(e) {
+        document.getElementById('vectorResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+function vectorCross() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    try {
+        const v = parseVector(document.getElementById('vectorV').value);
+        const w = parseVector(document.getElementById('vectorW').value);
+        const result = mathLib.cross(v, w);
+        document.getElementById('vectorResult').innerHTML = '✅ الضرب الاتجاهي: ' + JSON.stringify(result);
+    } catch(e) {
+        document.getElementById('vectorResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+// ============================================================
+//  GRAPH MODULE
+// ============================================================
+function plotGraph() {
+    if (typeof Plotly === 'undefined') {
+        document.getElementById('graphContainer').innerHTML = '<p style="color:#ff4444;">⚠️ مكتبة Plotly غير محملة</p>';
+        return;
+    }
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('graphFuncs');
+    if (!input.value) return;
+    const funcs = input.value.split('\n').filter(f => f.trim());
+    const container = document.getElementById('graphContainer');
+    
+    try {
+        const traces = [];
+        const colors = ['#00ff88', '#ff6644', '#4488ff', '#ffaa44', '#ff44ff'];
+        const xValues = [];
+        for (let x = -10; x <= 10; x += 0.1) {
+            xValues.push(x);
+        }
+        
+        funcs.forEach((func, i) => {
+            const yValues = xValues.map(x => {
+                try {
+                    const result = safeEvaluate(func, {x: x});
+                    return typeof result === 'number' ? result : NaN;
+                } catch(e) {
+                    return NaN;
+                }
+            });
+            traces.push({
+                x: xValues,
+                y: yValues,
+                mode: 'lines',
+                name: func,
+                line: { color: colors[i % colors.length], width: 2 }
+            });
+        });
+        
+        const layout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#e0e0e0' },
+            xaxis: { 
+                title: 'x', 
+                gridcolor: 'rgba(255,255,255,0.1)',
+                zerolinecolor: 'rgba(255,255,255,0.3)',
+                color: '#e0e0e0'
+            },
+            yaxis: { 
+                title: 'y', 
+                gridcolor: 'rgba(255,255,255,0.1)',
+                zerolinecolor: 'rgba(255,255,255,0.3)',
+                color: '#e0e0e0'
+            },
+            legend: { 
+                font: { color: '#e0e0e0' },
+                bgcolor: 'rgba(0,0,0,0.5)'
+            },
+            margin: { l: 50, r: 50, t: 30, b: 50 }
+        };
+        
+        Plotly.newPlot(container, traces, layout, { responsive: true });
+    } catch(e) {
+        container.innerHTML = '<p style="color:#ff4444;">❌ خطأ في الرسم: ' + e.message + '</p>';
+    }
+}
+
+function plotDerivative() {
+    if (typeof Plotly === 'undefined') {
+        document.getElementById('graphContainer').innerHTML = '<p style="color:#ff4444;">⚠️ مكتبة Plotly غير محملة</p>';
+        return;
+    }
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('graphFuncs');
+    if (!input.value) return;
+    const funcs = input.value.split('\n').filter(f => f.trim());
+    const container = document.getElementById('graphContainer');
+    
+    try {
+        const traces = [];
+        const colors = ['#00ff88', '#ff6644', '#4488ff', '#ffaa44', '#ff44ff'];
+        const xValues = [];
+        for (let x = -10; x <= 10; x += 0.1) {
+            xValues.push(x);
+        }
+        
+        funcs.forEach((func, i) => {
+            const yValues = xValues.map(x => {
+                try {
+                    const h = 0.0001;
+                    const f1 = safeEvaluate(func, {x: x + h});
+                    const f2 = safeEvaluate(func, {x: x - h});
+                    return (f1 - f2) / (2 * h);
+                } catch(e) {
+                    return NaN;
+                }
+            });
+            traces.push({
+                x: xValues,
+                y: yValues,
+                mode: 'lines',
+                name: "d/dx " + func,
+                line: { color: colors[i % colors.length], width: 2, dash: 'dash' }
+            });
+        });
+        
+        const layout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#e0e0e0' },
+            xaxis: { 
+                title: 'x', 
+                gridcolor: 'rgba(255,255,255,0.1)',
+                zerolinecolor: 'rgba(255,255,255,0.3)',
+                color: '#e0e0e0'
+            },
+            yaxis: { 
+                title: "f'(x)", 
+                gridcolor: 'rgba(255,255,255,0.1)',
+                zerolinecolor: 'rgba(255,255,255,0.3)',
+                color: '#e0e0e0'
+            },
+            legend: { 
+                font: { color: '#e0e0e0' },
+                bgcolor: 'rgba(0,0,0,0.5)'
+            },
+            margin: { l: 50, r: 50, t: 30, b: 50 }
+        };
+        
+        Plotly.newPlot(container, traces, layout, { responsive: true });
+    } catch(e) {
+        container.innerHTML = '<p style="color:#ff4444;">❌ خطأ في الرسم: ' + e.message + '</p>';
+    }
+}
+
+// ============================================================
+//  EQUATION SOLVER
+// ============================================================
+function equationSolve() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('eqSolverInput');
+    if (!input.value) return;
+    try {
+        const eq = input.value;
+        let result = 'لا يمكن الحل';
+        // Solve quadratic
+        const match = eq.match(/([+-]?\d*\.?\d*)x\^2\s*([+-]\s*\d*\.?\d*)x\s*([+-]\s*\d*\.?\d*)\s*=\s*0/);
+        if (match) {
+            const a = parseFloat(match[1] || 1);
+            const b = parseFloat(match[2] || 0);
+            const c = parseFloat(match[3] || 0);
+            const disc = b*b - 4*a*c;
+            if (disc >= 0) {
+                const x1 = (-b + Math.sqrt(disc)) / (2*a);
+                const x2 = (-b - Math.sqrt(disc)) / (2*a);
+                result = `x₁ = ${x1.toFixed(precision)}, x₂ = ${x2.toFixed(precision)}`;
+            } else {
+                result = 'جذور مركبة';
+            }
+        } else {
+            result = 'حل عددي: ' + formatResult(safeEvaluate(eq.replace('=', '-(') + ')', {x: 0}));
+        }
+        document.getElementById('equationResult').innerHTML = '✅ الحل: ' + result;
+    } catch (e) {
+        document.getElementById('equationResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+function equationSolveSystem() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('eqSystemInput');
+    if (!input.value) return;
+    try {
+        const lines = input.value.split('\n').filter(l => l.trim());
+        let result = 'لا يمكن حل النظام';
+        if (lines.length >= 3) {
+            try {
+                const A = [];
+                const b = [];
+                lines.forEach(line => {
+                    const parts = line.match(/([+-]?\d*\.?\d*)x\s*([+-]\s*\d*\.?\d*)y\s*([+-]\s*\d*\.?\d*)z?\s*=\s*([+-]?\d*\.?\d*)/);
+                    if (parts) {
+                        A.push([
+                            parseFloat(parts[1] || 1),
+                            parseFloat(parts[2] || 0),
+                            parseFloat(parts[3] || 0)
+                        ]);
+                        b.push(parseFloat(parts[4] || 0));
+                    }
+                });
+                if (A.length === 3) {
+                    const matrix = mathLib.matrix(A);
+                    const bVec = mathLib.matrix(b);
+                    const solution = mathLib.lusolve ? mathLib.lusolve(matrix, bVec) : mathLib.solve(matrix, bVec);
+                    result = `x = ${solution.get([0]).toFixed(precision)}, y = ${solution.get([1]).toFixed(precision)}, z = ${solution.get([2]).toFixed(precision)}`;
+                }
+            } catch(e) {
+                result = 'خطأ في حل النظام';
+            }
+        }
+        document.getElementById('equationResult').innerHTML = '✅ حل النظام: ' + result;
+    } catch (e) {
+        document.getElementById('equationResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+// ============================================================
+//  UNIT CONVERTER
+// ============================================================
+function convertUnits() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const value = parseFloat(document.getElementById('convValue').value);
+    const from = document.getElementById('convFrom').value;
+    const to = document.getElementById('convTo').value;
+    if (isNaN(value)) return;
+    try {
+        const unitFrom = mathLib.unit(value, from);
+        const result = unitFrom.to(to);
+        document.getElementById('convResult').innerHTML = 
+            `✅ ${value} ${from} = ${result.value.toFixed(precision)} ${to}`;
+    } catch(e) {
+        document.getElementById('convResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+// ============================================================
+//  NUMBER THEORY
+// ============================================================
+function numberPrime() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('numInput');
+    if (!input.value) return;
+    const n = parseInt(input.value);
+    if (isNaN(n)) return;
+    try {
+        const isPrime = mathLib.isPrime ? mathLib.isPrime(n) : 'غير مدعوم';
+        document.getElementById('numResult').innerHTML = 
+            `✅ العدد ${n} ${isPrime ? 'أولي' : 'ليس أوليًا'}`;
+    } catch(e) {
+        document.getElementById('numResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+function numberFactor() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('numInput');
+    if (!input.value) return;
+    const n = parseInt(input.value);
+    if (isNaN(n)) return;
+    try {
+        const factors = [];
+        let temp = n;
+        for (let i = 2; i <= temp; i++) {
+            while (temp % i === 0) {
+                factors.push(i);
+                temp /= i;
+            }
+        }
+        document.getElementById('numResult').innerHTML = 
+            `✅ عوامل ${n}: ${factors.join(' × ')}`;
+    } catch(e) {
+        document.getElementById('numResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+function numberGCD() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const input = document.getElementById('numInput');
+    if (!input.value) return;
+    const nums = input.value.split(',').map(Number).filter(n => !isNaN(n));
+    if (nums.length < 2) return;
+    try {
+        const gcd = mathLib.gcd(...nums);
+        document.getElementById('numResult').innerHTML = 
+            `✅ GCD(${nums.join(', ')}) = ${gcd}`;
+    } catch(e) {
+        document.getElementById('numResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+// ============================================================
+//  GEOMETRY MODULE
+// ============================================================
+function updateGeoFields() {
+    const type = document.getElementById('geoType').value;
+    const container = document.getElementById('geoFields');
+    let html = '';
+    switch(type) {
+        case 'circle':
+            html = `<label>نصف القطر:</label><input type="text" id="geoR" placeholder="r" />`;
+            break;
+        case 'triangle':
+            html = `<label>القاعدة:</label><input type="text" id="geoB" placeholder="b" />
+                   <label>الارتفاع:</label><input type="text" id="geoH" placeholder="h" />`;
+            break;
+        case 'rectangle':
+            html = `<label>الطول:</label><input type="text" id="geoL" placeholder="l" />
+                   <label>العرض:</label><input type="text" id="geoW" placeholder="w" />`;
+            break;
+        case 'square':
+            html = `<label>الضلع:</label><input type="text" id="geoS" placeholder="s" />`;
+            break;
+        case 'sphere':
+            html = `<label>نصف القطر:</label><input type="text" id="geoR" placeholder="r" />`;
+            break;
+        case 'cylinder':
+            html = `<label>نصف القطر:</label><input type="text" id="geoR" placeholder="r" />
+                   <label>الارتفاع:</label><input type="text" id="geoH" placeholder="h" />`;
+            break;
+        case 'cone':
+            html = `<label>نصف القطر:</label><input type="text" id="geoR" placeholder="r" />
+                   <label>الارتفاع:</label><input type="text" id="geoH" placeholder="h" />`;
+            break;
+    }
+    container.innerHTML = html;
+}
+
+function geometryCalculate() {
+    if (!mathLib) { showError('math.js غير محملة'); return; }
+    const type = document.getElementById('geoType').value;
+    let result = '';
+    try {
+        switch(type) {
+            case 'circle': {
+                const r = parseFloat(document.getElementById('geoR').value);
+                if (isNaN(r)) return;
+                const area = Math.PI * r * r;
+                const circumference = 2 * Math.PI * r;
+                result = `المساحة: ${area.toFixed(precision)}, المحيط: ${circumference.toFixed(precision)}`;
+                break;
+            }
+            case 'triangle': {
+                const b = parseFloat(document.getElementById('geoB').value);
+                const h = parseFloat(document.getElementById('geoH').value);
+                if (isNaN(b) || isNaN(h)) return;
+                const area = 0.5 * b * h;
+                result = `المساحة: ${area.toFixed(precision)}`;
+                break;
+            }
+            case 'rectangle': {
+                const l = parseFloat(document.getElementById('geoL').value);
+                const w = parseFloat(document.getElementById('geoW').value);
+                if (isNaN(l) || isNaN(w)) return;
+                const area = l * w;
+                const perimeter = 2 * (l + w);
+                result = `المساحة: ${area.toFixed(precision)}, المحيط: ${perimeter.toFixed(precision)}`;
+                break;
+            }
+            case 'square': {
+                const s = parseFloat(document.getElementById('geoS').value);
+                if (isNaN(s)) return;
+                const area = s * s;
+                const perimeter = 4 * s;
+                result = `المساحة: ${area.toFixed(precision)}, المحيط: ${perimeter.toFixed(precision)}`;
+                break;
+            }
+            case 'sphere': {
+                const r = parseFloat(document.getElementById('geoR').value);
+                if (isNaN(r)) return;
+                const volume = (4/3) * Math.PI * r * r * r;
+                const surface = 4 * Math.PI * r * r;
+                result = `الحجم: ${volume.toFixed(precision)}, المساحة السطحية: ${surface.toFixed(precision)}`;
+                break;
+            }
+            case 'cylinder': {
+                const r = parseFloat(document.getElementById('geoR').value);
+                const h = parseFloat(document.getElementById('geoH').value);
+                if (isNaN(r) || isNaN(h)) return;
+                const volume = Math.PI * r * r * h;
+                const surface = 2 * Math.PI * r * (r + h);
+                result = `الحجم: ${volume.toFixed(precision)}, المساحة السطحية: ${surface.toFixed(precision)}`;
+                break;
+            }
+            case 'cone': {
+                const r = parseFloat(document.getElementById('geoR').value);
+                const h = parseFloat(document.getElementById('geoH').value);
+                if (isNaN(r) || isNaN(h)) return;
+                const volume = (1/3) * Math.PI * r * r * h;
+                const l = Math.sqrt(r*r + h*h);
+                const surface = Math.PI * r * (r + l);
+                result = `الحجم: ${volume.toFixed(precision)}, المساحة السطحية: ${surface.toFixed(precision)}`;
+                break;
+            }
+        }
+        document.getElementById('geoResult').innerHTML = '✅ ' + result;
+    } catch(e) {
+        document.getElementById('geoResult').innerHTML = '❌ خطأ: ' + e.message;
+    }
+}
+
+// ============================================================
+//  EXPOSE FUNCTIONS GLOBALLY
+// ============================================================
+window.input = input;
+window.calculate = calculate;
+window.clearDisplay = clearDisplay;
+window.clearAll = clearAll;
+window.backspace = backspace;
+window.memoryRecall = memoryRecall;
+window.memoryStore = memoryStore;
+window.memoryAdd = memoryAdd;
+window.memorySubtract = memorySubtract;
+window.memoryClear = memoryClear;
+window.toggleMemory = toggleMemory;
+window.showHistory = showHistory;
+window.recallHistory = recallHistory;
+window.evalScientific = evalScientific;
+window.algebraSimplify = algebraSimplify;
+window.algebraFactor = algebraFactor;
+window.algebraExpand = algebraExpand;
+window.algebraSolve = algebraSolve;
+window.algebraSolveSystem = algebraSolveSystem;
+window.calculusDerivative = calculusDerivative;
+window.calculusIntegral = calculusIntegral;
+window.calculusDefiniteIntegral = calculusDefiniteIntegral;
+window.calculusLimit = calculusLimit;
+window.statisticsCalculate = statisticsCalculate;
+window.probabilityCalculate = probabilityCalculate;
+window.distributionCalculate = distributionCalculate;
+window.matrixAdd = matrixAdd;
+window.matrixMultiply = matrixMultiply;
+window.matrixInverse = matrixInverse;
+window.matrixDeterminant = matrixDeterminant;
+window.vectorAdd = vectorAdd;
+window.vectorDot = vectorDot;
+window.vectorCross = vectorCross;
+window.plotGraph = plotGraph;
+window.plotDerivative = plotDerivative;
+window.equationSolve = equationSolve;
+window.equationSolveSystem = equationSolveSystem;
+window.convertUnits = convertUnits;
+window.numberPrime = numberPrime;
+window.numberFactor = numberFactor;
+window.numberGCD = numberGCD;
+window.updateGeoFields = updateGeoFields;
+window.geometryCalculate = geometryCalculate;
+
+console.log('✅ ClassWiz Pro Calculator loaded successfully!');
+if (mathLib) {
+    console.log('📚 Using math.js v' + mathLib.version);
+} else {
+    console.error('❌ math.js not loaded!');
+}
+</script>
+</body>
+</html>
